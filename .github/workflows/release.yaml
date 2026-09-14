@@ -53,13 +53,13 @@ jobs:
             | grep -v "<version>${{ github.event.inputs.release_version }}" || true)
 
           if [ -n "$SNAPSHOT_POMS" ]; then
-            echo "::warning::Found SNAPSHOT dependencies in the project:"
+            echo "::error::Found SNAPSHOT dependencies in the project:"
             echo "$SNAPSHOT_POMS"
-          else
-            echo "✅ No SNAPSHOT dependencies found."
+            # a released pom which points at a snapshot cannot be resolved later, so the
+            # release stops here instead of printing a warning nobody reads
+            exit 1
           fi
-          # Always exit successfully
-          exit 0
+          echo "No SNAPSHOT dependencies found."
 
       - name: Build & deploy to Maven Central
         run: |
