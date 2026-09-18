@@ -1,0 +1,11 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>vanillabp/renovate-config"],
+  "packageRules": [
+    {
+      "description": "This POM is what every VanillaBP repository inherits its plugin versions from, so a plugin update here is a change for all of them and is read before it is merged, not automerged.",
+      "matchManagers": ["maven"],
+      "automerge": false
+    }
+  ]
+}
