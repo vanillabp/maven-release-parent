@@ -85,6 +85,18 @@
                  and every module would report the miss -->
             <detectJavaApiLink>false</detectJavaApiLink>
             <detectOfflineLinks>false</detectOfflineLinks>
+            <!-- javadoc reports 100 warnings per module and then stops, in one line which
+                 reads like the end of the list. Whoever counts warnings to see how much
+                 work a module still holds counts too few, and a repository which has more
+                 than a hundred in one module learns that only after fixing the first
+                 hundred. The number below is high enough that no module reaches it.
+                 The run is incremental as well: a module whose sources did not move since
+                 the last run is skipped and reports nothing at all. Delete
+                 'target/reports/apidocs' before counting, otherwise a clean count means
+                 nothing more than that nobody recompiled. -->
+            <additionalOptions>
+              <additionalOption>-Xmaxwarns 100000</additionalOption>
+            </additionalOptions>
           </configuration>
           <executions>
             <execution>
