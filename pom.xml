@@ -161,7 +161,9 @@
               <!-- the javadoc artifact a release ships. It is bound here and not in the
                    managed section, so an ordinary build runs the check but does not pack a
                    jar nobody asked for. The configuration above applies to this execution
-                   too, so a release can no longer attach a javadoc which does not build. -->
+                   too, so a release can no longer attach a javadoc which does not build.
+                   A snapshot deployed without this profile therefore carries no javadoc
+                   jar, and that is meant. See the README for what was measured. -->
               <execution>
                 <id>attach-javadocs</id>
                 <phase>package</phase>
