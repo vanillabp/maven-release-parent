@@ -22,6 +22,20 @@ javadoc. An IDE which offers to download sources and documentation asks for the 
 If that ever changes, the two ways out are to give the snapshot deploy `-P release` or to bind
 `attach-javadocs` back into the managed section.
 
+Sources are the other half of that question, and they got the other answer. This POM attaches
+them in the `release` profile as well, so a snapshot got none out of it, and for sources somebody
+does ask: an IDE which jumps into a class offers to fetch them, and the local Maven repository of
+a development machine is full of markers of sources jars which were asked for and were not there.
+Every repository which publishes snapshots therefore binds `maven-source-plugin` in its own build,
+the way `adapter-platform-integration` always has.
+
+That binding is not in this POM, although here it would be written once. It would not reach
+everyone: `camunda7-adapter` and `camunda8-adapter` have no parent POM at all, the Business
+Cockpit repositories still name version 1.1.1, and every other repository would have to wait for
+a release of this POM and then raise its parent version. All five would go on publishing
+snapshots without sources until that was done, and two of them for good. A build which packs its
+sources costs about a tenth of a second per module.
+
 ## Noteworthy & Contributors
 
 VanillaBP was developed by [Phactum](https://www.phactum.at) with the intention of giving back to the community as it has benefited the community in the past.
