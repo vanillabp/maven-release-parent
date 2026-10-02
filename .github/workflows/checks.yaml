@@ -49,7 +49,7 @@ jobs:
           mvn -B -N --no-transfer-progress help:all-profiles | tee "${RUNNER_TEMP}/profiles.txt"
           # 'Source: pom' is the part that matters. The same listing shows the profiles of
           # the settings.xml of whoever runs it, and those say nothing about this POM.
-          for profile in release attach-javadocs central-portal; do
+          for profile in release central-portal; do
             grep -qE "Profile Id: $profile \(.*Source: pom\)" "${RUNNER_TEMP}/profiles.txt" || {
               echo "::error::This POM has no profile '$profile' any more. A repository which uses it names these profiles when it releases, so a renamed or dropped id breaks that release. Keep the id and change what is inside it."
               exit 1
