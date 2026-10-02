@@ -1,0 +1,80 @@
+name: Checks
+# This repository is one POM with no modules and no Java sources. There is nothing to
+# compile here and no javadoc of its own to read, and until this workflow existed a pull
+# request got no answer at all: the other workflow, release.yaml, is started by hand.
+#
+# What can break is what the repositories which use this POM as their parent read out of
+# it. They inherit the plugin versions, and they build a release with the profiles the job
+# below asks for. So a version bumped to something which is not on Maven Central, or a
+# renamed profile, breaks their build and never this one. The job says it here instead.
+#
+# What the job cannot say: whether a new plugin version behaves. It only proves that the
+# version exists and downloads. maven-jar-plugin is left out of that, because this POM
+# only manages its version and never runs it, so Maven has no reason to fetch it here.
+"on":
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  # One run of the checks per branch, and the newest run wins. Nobody reads the answer of
+  # a commit which has been pushed over, and a check can run again any time.
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  # The ruleset of main stores this name, so it stays as it is. After a rename every pull
+  # request waits for a check which no longer reports.
+  parent-pom-verified:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          java-version: 25.0.4+101.0.LTS
+          distribution: temurin
+          cache: maven
+      # -N everywhere: there are no modules. The effective POM is written next to the run
+      # and not into the checkout, so the same commands leave no file behind on a machine
+      # where somebody tries them by hand. The last step reads it again.
+      - name: The POM builds its model
+        run: mvn -B -N --no-transfer-progress help:effective-pom
+          -Doutput="${RUNNER_TEMP}/effective-pom.xml"
+      # with both profiles on, so the plugins a release runs are fetched as well. This is
+      # the step which goes red on a version nobody can download.
+      - name: Every plugin version this POM names can be downloaded
+        run: mvn -B -N --no-transfer-progress -P release,central-portal dependency:resolve-plugins
+      - name: The profiles a child releases with are still there
+        run: |
+          set -euo pipefail
+          mvn -B -N --no-transfer-progress help:all-profiles | tee "${RUNNER_TEMP}/profiles.txt"
+          # 'Source: pom' is the part that matters. The same listing shows the profiles of
+          # the settings.xml of whoever runs it, and those say nothing about this POM.
+          for profile in release central-portal; do
+            grep -qE "Profile Id: $profile \(.*Source: pom\)" "${RUNNER_TEMP}/profiles.txt" || {
+              echo "::error::This POM has no profile '$profile' any more. The repositories which use it run their release with '-P release,central-portal', so a renamed or dropped profile breaks that release. Keep the id and change what is inside it."
+              exit 1
+            }
+          done
+      - name: A child still gets the javadoc check without asking for it
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, sys, xml.etree.ElementTree as ET
+          ns = {"m": "http://maven.apache.org/POM/4.0.0"}
+          pom = ET.parse(os.environ["RUNNER_TEMP"] + "/effective-pom.xml").getroot()
+          # the executions of the javadoc plugin under build/plugins, which is what a child
+          # inherits in a plain 'mvn install'. The copy under pluginManagement is not read
+          # here: a plugin which is only managed runs nowhere.
+          executions = pom.findall(
+              "m:build/m:plugins/m:plugin[m:artifactId='maven-javadoc-plugin']"
+              "/m:executions/m:execution", ns)
+          ids = [e.findtext("m:id", default="", namespaces=ns) for e in executions]
+          if "check-javadoc" in ids:
+              print("A child inherits the javadoc check and writes nothing for it.")
+              sys.exit(0)
+          print("::error::The execution 'check-javadoc' of maven-javadoc-plugin is gone "
+                "from build/plugins. A child which writes nothing of its own then builds "
+                "without the javadoc check, and that shows up at the release, when the "
+                "javadoc artifact is built. Found: " + ", ".join(ids or ["nothing"]))
+          sys.exit(1)
+          PY
