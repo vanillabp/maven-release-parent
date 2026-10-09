@@ -55,9 +55,9 @@ the same Central Portal token. A snapshot needs neither a signature nor a javado
 `release` profile is not needed for it.
 
 Central removes a snapshot about 90 days after it was published. A repository whose `main` does not
-change for that long loses its snapshot, and every build which depends on it fails. A repository
-which changes rarely therefore publishes its snapshot on a schedule as well, not only on a push to
-`main`.
+change for that long loses its snapshot, and the next build which depends on it fails and says so.
+None of the repositories publishes on a schedule today. That was decided on purpose: a push to
+`main` publishes again, and a missing snapshot shows up in the first build which needs it.
 
 ## Noteworthy & Contributors
 
