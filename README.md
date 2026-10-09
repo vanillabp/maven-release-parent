@@ -36,6 +36,29 @@ a release of this POM and then raise its parent version. All five would go on pu
 snapshots without sources until that was done, and two of them for good. A build which packs its
 sources costs about a tenth of a second per module.
 
+## Where snapshots are published and read
+
+Snapshots live on Maven Central, in the snapshot repository
+`https://central.sonatype.com/repository/maven-snapshots/`. This POM names it under
+`<repositories>`, so every repository which inherits this POM resolves the snapshots of the others
+from there. Reading needs no login. That is what lets the build of a pull request from a fork
+resolve the snapshots it depends on, because GitHub gives such a build no secrets.
+
+One repository serves every namespace which has snapshots switched on in the Central Portal. It
+answers for `io.vanillabp` and for `com.phactum` alike, so there is no second entry for the second
+namespace.
+
+To publish a snapshot, run `mvn deploy -P central-portal` on a version ending in `-SNAPSHOT`. The
+publishing plugin looks at the version: a release goes to the Central Portal as a deployment, a
+snapshot goes straight to the snapshot repository. Both use the server id `vanillabp-central` and
+the same Central Portal token. A snapshot needs neither a signature nor a javadoc jar, so the
+`release` profile is not needed for it.
+
+Central removes a snapshot about 90 days after it was published. A repository whose `main` does not
+change for that long loses its snapshot, and every build which depends on it fails. A repository
+which changes rarely therefore publishes its snapshot on a schedule as well, not only on a push to
+`main`.
+
 ## Noteworthy & Contributors
 
 VanillaBP was developed by [Phactum](https://www.phactum.at) with the intention of giving back to the community as it has benefited the community in the past.
