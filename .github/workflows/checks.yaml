@@ -78,3 +78,32 @@ jobs:
                 "javadoc artifact is built. Found: " + ", ".join(ids or ["nothing"]))
           sys.exit(1)
           PY
+      # The <scm> block is published with every release. Its <url> once named
+      # spi-for-java over http, copied from the POM this one was made from. Somebody who
+      # looked there for the place this POM is kept found the wrong repository. The step
+      # reads pom.xml as written. The scm block holds no property, so there is nothing for
+      # the effective POM to resolve.
+      - name: The scm block names this repository
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os, sys, xml.etree.ElementTree as ET
+          ns = {"m": "http://maven.apache.org/POM/4.0.0"}
+          scm = ET.parse("pom.xml").getroot().find("m:scm", ns)
+          # The name of the repository on GitHub and not the owner: a fork has another owner.
+          name = os.environ["REPOSITORY"].split("/")[1]
+          wrong = []
+          for tag in ("connection", "developerConnection", "url"):
+              value = "" if scm is None else scm.findtext("m:" + tag, default="", namespaces=ns).strip()
+              if "https://github.com/" not in value or "/" + name not in value:
+                  wrong.append(f"<{tag}> is '{value}'")
+          if not wrong:
+              print("The scm block names https://github.com/.../" + name + " three times.")
+              sys.exit(0)
+          print("::error::The <scm> block of pom.xml must name this repository, '" + name
+                + "', over https. A release publishes it, and a reader follows it to find "
+                "where this POM is kept. " + "; ".join(wrong))
+          sys.exit(1)
+          PY
