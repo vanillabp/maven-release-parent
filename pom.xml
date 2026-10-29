@@ -162,6 +162,70 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
       </plugin>
+      <!-- formats this repository the way the other VanillaBP repositories are formatted.
+           'inherited' is false, so it checks this POM and its Markdown only. A repository
+           which uses this POM as its parent brings its own Spotless configuration, and
+           its build must not change because this one is formatted. -->
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>3.10.4</version>
+        <inherited>false</inherited>
+        <configuration>
+          <pom>
+            <includes>
+              <include>**/pom.xml</include>
+            </includes>
+            <excludes>
+              <exclude>**/target/**/</exclude>
+              <!-- the workflows carry comments, and the YAML formatter round-trips
+                   through Jackson, which drops them -->
+              <exclude>**/.github/**/</exclude>
+            </excludes>
+            <sortPom>
+              <quiet>true</quiet>
+            </sortPom>
+          </pom>
+          <markdown>
+            <includes>
+              <include>**/*.md</include>
+            </includes>
+            <excludes>
+              <exclude>**/target/**/</exclude>
+              <!-- the workflows carry comments, and the YAML formatter round-trips
+                   through Jackson, which drops them -->
+              <exclude>**/.github/**/</exclude>
+            </excludes>
+            <flexmark/>
+          </markdown>
+          <yaml>
+            <includes>
+              <include>**/*.yaml</include>
+            </includes>
+            <excludes>
+              <exclude>**/target/**/</exclude>
+              <!-- the workflows carry comments, and the YAML formatter round-trips
+                   through Jackson, which drops them -->
+              <exclude>**/.github/**/</exclude>
+            </excludes>
+            <jackson>
+              <yamlFeatures>
+                <MINIMIZE_QUOTES>true</MINIMIZE_QUOTES>
+                <WRITE_DOC_START_MARKER>false</WRITE_DOC_START_MARKER>
+                <INDENT_ARRAYS_WITH_INDICATOR>true</INDENT_ARRAYS_WITH_INDICATOR>
+              </yamlFeatures>
+            </jackson>
+          </yaml>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <phase>process-sources</phase>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
