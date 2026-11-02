@@ -291,6 +291,11 @@
             <configuration>
               <publishingServerId>vanillabp-central</publishingServerId>
               <skipPublishing>${skip.central.release}</skipPublishing>
+              <!-- MD5 and SHA-1 only, which is what Central asks for. The default 'all' adds
+                   SHA-256 and SHA-512 to every file and so doubles the number of checksum
+                   files in a deployment, and the organization may publish only so many
+                   files a month -->
+              <checksums>required</checksums>
             </configuration>
           </plugin>
         </plugins>
