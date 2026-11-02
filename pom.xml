@@ -36,6 +36,9 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <skip.central.release>false</skip.central.release>
+    <!-- true builds the bundle of a release and does not upload it. A release train sets it,
+         see the README -->
+    <central.skip.upload>false</central.skip.upload>
   </properties>
 
   <!-- the snapshots of every VanillaBP repository live on Maven Central. One repository
@@ -286,7 +289,7 @@
           <plugin>
             <groupId>org.sonatype.central</groupId>
             <artifactId>central-publishing-maven-plugin</artifactId>
-            <version>0.11.0</version>
+            <version>0.12.0</version>
             <extensions>true</extensions>
             <configuration>
               <publishingServerId>vanillabp-central</publishingServerId>
@@ -296,6 +299,10 @@
                    files in a deployment, and the organization may publish only so many
                    files a month -->
               <checksums>required</checksums>
+              <!-- leaves the bundle in target/central-publishing/central-bundle.zip and does
+                   not upload it. The release workflows set it for a release train, which
+                   uploads the bundles of several repositories as one deployment -->
+              <skipUpload>${central.skip.upload}</skipUpload>
             </configuration>
           </plugin>
         </plugins>
