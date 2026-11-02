@@ -78,9 +78,9 @@ prints the files and MB per repository. It stops if a file is in two bundles or 
 the limits. With `dry_run` it stops before the upload. Without it, it uploads the merged bundle
 once and waits until Maven Central has published it.
 
-A train needs version 0.12.0 of `central-publishing-maven-plugin`, which comes with a
-release-parent newer than 1.3.0. A repository which still names 1.3.0 stops its train release
-before the build. The workflows read the other repositories with the organization secret
+A train needs version 0.12.0 of `central-publishing-maven-plugin`, which comes with
+release-parent 2.0.0. A repository which still names 1.3.0 stops its train release before the
+build. The workflows read the other repositories with the organization secret
 `VANILLABP_USER_TOKEN`, which needs `actions:read` there.
 
 Each repository has one slot per train. The Business Cockpit Camunda 8 adapter has one slot per

@@ -78,7 +78,7 @@ prepare() {
   plugin=$(grep -A1 '<artifactId>central-publishing-maven-plugin</artifactId>' "$WORK/effective-pom.xml" \
     | sed -n 's|.*<version>\(.*\)</version>.*|\1|p' | sort -V | head -1)
   if [ -z "$plugin" ] || [ "$(printf '%s\n' 0.12.0 "$plugin" | sort -V | head -1)" != 0.12.0 ]; then
-    fail "central-publishing-maven-plugin '$plugin' cannot keep a bundle without uploading it. A release train needs 0.12.0 or later, which comes with a release-parent newer than 1.3.0."
+    fail "central-publishing-maven-plugin '$plugin' cannot keep a bundle without uploading it. A release train needs 0.12.0 or later, which comes with release-parent 2.0.0 or later."
   fi
   local repo slot id created run dir
   while IFS=$'\t' read -r repo slot id created run; do
