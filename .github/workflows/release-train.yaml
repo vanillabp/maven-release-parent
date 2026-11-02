@@ -1,0 +1,92 @@
+name: Release train 🚂
+# Uploads the bundles of a release train to Maven Central as one deployment. Sonatype counts
+# every deployment as one release and allows only a few a month, so a train of ten
+# repositories costs one of them instead of ten.
+#
+# The release workflow of each repository builds its bundle with the input 'train' and
+# keeps it as an Actions artifact. This workflow collects the newest bundle of every slot,
+# merges them, checks the result and uploads it. See the README, section "Releasing
+# several repositories as one deployment".
+"on":
+  workflow_dispatch:
+    inputs:
+      train:
+        description: "Name of the release train, the same as in the release workflows (e.g. 2.0)"
+        required: true
+      dry_run:
+        description: "Do everything except the upload to Maven Central"
+        type: boolean
+        default: true
+      max_files:
+        description: "Files Sonatype still allows this month"
+        default: "2500"
+      max_mb:
+        description: "MB Sonatype still allows this month"
+        default: "100"
+concurrency:
+  # one upload at a time: two runs of one train would publish the same coordinates twice
+  group: release-train
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  train:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Collect the bundles of the train
+        env:
+          TRAIN: "${{ inputs.train }}"
+          MAX_FILES: "${{ inputs.max_files }}"
+          MAX_MB: "${{ inputs.max_mb }}"
+          # reads the Actions artifacts of the other repositories, which GITHUB_TOKEN cannot
+          GH_TOKEN: "${{ secrets.VANILLABP_USER_TOKEN }}"
+        run: |
+          bash .github/scripts/release-train.sh collect "$TRAIN" "$RUNNER_TEMP/train" "$MAX_FILES" "$MAX_MB"
+          cd "$RUNNER_TEMP/train"
+          zip -q -r "$RUNNER_TEMP/release-train.zip" .
+          ls -l "$RUNNER_TEMP/release-train.zip"
+
+      # the merged bundle, so a dry run leaves something to look at. Its name does not
+      # start with 'release-train-', so no train picks it up as the bundle of this repository
+      - name: Keep the merged bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: "merged-release-train-${{ inputs.train }}"
+          path: "${{ runner.temp }}/release-train.zip"
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload to Maven Central
+        if: ${{ !inputs.dry_run }}
+        timeout-minutes: 60
+        env:
+          TRAIN: "${{ inputs.train }}"
+          MAVEN_USERNAME: "${{ secrets.MAVEN_CENTRAL_PORTAL_TOKEN_USER }}"
+          MAVEN_PASSWORD: "${{ secrets.MAVEN_CENTRAL_PORTAL_TOKEN_PW }}"
+        run: |
+          set -euo pipefail
+          auth="Authorization: Bearer $(printf '%s:%s' "$MAVEN_USERNAME" "$MAVEN_PASSWORD" | base64 -w0)"
+          api=https://central.sonatype.com/api/v1/publisher
+          id=$(curl --fail-with-body --silent --show-error -X POST -H "$auth" \
+            -F "bundle=@$RUNNER_TEMP/release-train.zip" \
+            "$api/upload?publishingType=AUTOMATIC&name=$(jq -rn --arg n "$TRAIN" '$n|@uri')")
+          echo "Deployment $id uploaded. Waiting until Maven Central publishes it."
+          # validation and publishing take minutes, sometimes more than half an hour; the
+          # step's timeout ends the wait
+          while true; do
+            status=$(curl --fail-with-body --silent --show-error -X POST -H "$auth" "$api/status?id=$id")
+            state=$(echo "$status" | jq -r .deploymentState)
+            echo "$(date -u +%H:%M:%S) $state"
+            case "$state" in
+              PUBLISHED)
+                echo "The train '$TRAIN' is on Maven Central."
+                exit 0 ;;
+              FAILED)
+                echo "::error::Maven Central refused the train '$TRAIN'. Nothing was published."
+                echo "$status" | jq .errors
+                exit 1 ;;
+            esac
+            sleep 30
+          done

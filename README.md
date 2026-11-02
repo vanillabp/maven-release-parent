@@ -59,6 +59,56 @@ change for that long loses its snapshot, and the next build which depends on it 
 None of the repositories publishes on a schedule today. That was decided on purpose: a push to
 `main` publishes again, and a missing snapshot shows up in the first build which needs it.
 
+## Releasing several repositories as one deployment
+
+Sonatype limits what the `io.vanillabp` namespace may publish: 2500 files, 100 MB and 9
+deployments a month. Every release of a repository is one deployment, and an update of all
+repositories is 13 of them. A release train uploads the releases of several repositories as one
+deployment.
+
+First run the release workflow of each repository with the input `train`, for example `2.0`.
+The build signs everything as usual but does not upload. It keeps its bundle as an Actions
+artifact. Tag, draft GitHub release and the pull request back into `main` come as usual. Before
+its build, a train release unpacks the bundles of the train which are already there into its
+local Maven repository. That is how it finds a version of another repository which is not on
+Maven Central yet, and it is why the releases of a train follow the order of the dependencies.
+
+Then run `release-train.yaml` in this repository with the same `train`. It merges the bundles and
+prints the files and MB per repository. It stops if a file is in two bundles or if the sum breaks
+the limits. With `dry_run` it stops before the upload. Without it, it uploads the merged bundle
+once and waits until Maven Central has published it.
+
+A train needs version 0.12.0 of `central-publishing-maven-plugin`, which comes with
+release-parent 2.0.0. A repository which still names 1.3.0 stops its train release before the
+build. The workflows read the other repositories with the organization secret
+`VANILLABP_USER_TOKEN`, which needs `actions:read` there.
+
+Each repository has one slot per train. The Business Cockpit Camunda 8 adapter has one slot per
+release line. If a slot is built twice, the newest build counts. So a failed validation is fixed
+like this: fix the repository, run its release workflow again with the same `train`, then run
+`release-train.yaml` again. The fix may be a new patch version or the same version again. For the
+same version the workflow moves the tag and reuses the release branch and its pull request.
+Nothing is on Maven Central before the upload, so moving the tag is safe.
+
+The order for 2.0:
+
+1. `maven-release-parent` alone, without a train. Every other repository names the new version on
+   `main` first, and its pull request needs that version on Maven Central to build.
+2. Train one: `spi-for-java`, `adapter-platform-integration`, `business-cockpit`. Then
+   `release-train.yaml`.
+3. Outside the trains: the Camunda 7 and Camunda 8 adapters in the Camunda Community Hub, which
+   publish under `org.camunda.community`. They need train one on Maven Central.
+4. Train two: `hazelcast-shared-election-cache`, `businesscockpit-camunda7-adapter`,
+   `businesscockpit-camunda8-adapter` (one run releases all three lines),
+   `businesscockpit-cibseven-adapter`, `businesscockpit-operaton-adapter`,
+   `businesscockpit-process-engine-api-adapter`. Then `release-train.yaml`.
+
+`cibseven-adapter`, `operaton-adapter` and `process-engine-api-adapter` publish under
+`io.vanillabp` as well, but they have no release workflow yet. Train two needs them: the cockpit
+adapters of the three engines build on them, and the tests of `hazelcast-shared-election-cache`
+boot against the Process-Engine-API adapter. Once they have a release workflow with `train`,
+they join train one after `adapter-platform-integration`.
+
 ## Noteworthy & Contributors
 
 VanillaBP was developed by [Phactum](https://www.phactum.at) with the intention of giving back to the community as it has benefited the community in the past.
