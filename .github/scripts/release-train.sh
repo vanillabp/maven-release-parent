@@ -30,9 +30,9 @@ ORGANIZATION=vanillabp
 REPOSITORIES="maven-release-parent spi-for-java adapter-platform-integration
   camunda8-adapter camunda7-adapter
   cibseven-adapter operaton-adapter
-  hazelcast-shared-election-cache business-cockpit businesscockpit-camunda7-adapter
-  businesscockpit-camunda8-adapter businesscockpit-cibseven-adapter
-  businesscockpit-operaton-adapter businesscockpit-process-engine-api-adapter"
+  hazelcast-shared-election-cache business-cockpit business-cockpit-camunda7-adapter
+  business-cockpit-camunda8-adapter business-cockpit-cibseven-adapter
+  business-cockpit-operaton-adapter business-cockpit-process-engine-api-adapter"
 WORK="${RUNNER_TEMP:-/tmp}/release-train-work"
 
 fail() {
