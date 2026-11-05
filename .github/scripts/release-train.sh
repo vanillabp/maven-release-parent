@@ -27,6 +27,7 @@ set -euo pipefail
 
 ORGANIZATION=vanillabp
 REPOSITORIES="maven-release-parent spi-for-java adapter-platform-integration
+  camunda7-adapter
   cibseven-adapter operaton-adapter
   hazelcast-shared-election-cache business-cockpit businesscockpit-camunda7-adapter
   businesscockpit-camunda8-adapter businesscockpit-cibseven-adapter
