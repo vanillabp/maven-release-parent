@@ -86,9 +86,9 @@ build. The workflows read the other repositories with the organization secret
 Each repository has one slot per train. The Camunda 8 adapter and the Business Cockpit Camunda 8
 adapter have one slot per release line. If a slot is built twice, the newest build counts. So a
 failed validation is fixed like this: fix the repository, run its release workflow again with the
-same `train`, then run `release-train.yaml` again. The fix may be a new patch version or the same version again. For the
-same version the workflow moves the tag and reuses the release branch and its pull request.
-Nothing is on Maven Central before the upload, so moving the tag is safe.
+same `train`, then run `release-train.yaml` again. The fix may be a new patch version or the same
+version again. For the same version the workflow moves the tag and reuses the release branch and
+its pull request, see "Versions in a release" below.
 
 The order for 2.0:
 
@@ -114,6 +114,38 @@ comes before `businesscockpit-camunda8-adapter`, which builds each of its lines 
 the Camunda 8 adapter with the same name and reads it from the bundle of the same train.
 
 `process-engine-api-adapter` and `businesscockpit-process-engine-api-adapter` are not part of 2.0.
+
+## Versions in a release
+
+`main` of every repository depends on the snapshots of the other VanillaBP repositories, for
+example `adapter-platform.version` `2.0.0-SNAPSHOT`, until those are on Maven Central. Nobody
+raises them there by hand before a release: a pull request with `2.0.0` before the upload cannot
+get green checks.
+
+The release workflow raises them on its release branch. After it set its own version, and after
+it read the bundles of its train, it runs `.github/scripts/release-versions.sh raise`. That script
+changes every `x-SNAPSHOT` of an artifact of a group `io.vanillabp*` which the repository does not
+build into `x`, in a literal version and in a property alike. It takes `x` from the bundles of the
+train first, then from Maven Central. A release without a train asks Maven Central only. It does
+not touch the version of the repository itself, and it does not touch anything outside
+`io.vanillabp*`. The release commit lists the versions it changed, and the pull request back into
+`main` carries them, which is right once they are on Maven Central.
+
+If one of those versions is in neither place, the script changes nothing and stops the release
+before anything leaves the build: no tag, no branch, no pull request, no bundle. Its message names
+the artifact and the repository which builds it, read from the snapshot on Maven Central. Release
+that repository first, in the same train or alone, then run the release again with the same
+version.
+
+Before that, `release-versions.sh unpublished` asks Maven Central for the version which is about
+to be released. If it is there, the release stops: a version on Maven Central never changes. If it
+is not there, nobody can use the tag yet, so every release, with or without a train, moves an
+existing tag of the same version, replaces the release branch and reuses its open pull request. A
+release which failed after it pushed its tag runs again with the same version.
+
+The workflows download the script at a fixed commit of this repository, not from `main`. A change
+of the script reaches a repository through a pull request which moves that commit, and an older
+release branch keeps the script it was made with.
 
 ## Noteworthy & Contributors
 
