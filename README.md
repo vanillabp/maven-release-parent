@@ -84,9 +84,9 @@ build. The workflows read the other repositories with the organization secret
 `VANILLABP_USER_TOKEN`, which needs `actions:read` there.
 
 Each repository has one slot per train. The Camunda 8 adapter and the Business Cockpit Camunda 8
-adapter have one slot per release line. If a slot is built twice, the newest build counts. So a failed validation is fixed
-like this: fix the repository, run its release workflow again with the same `train`, then run
-`release-train.yaml` again. The fix may be a new patch version or the same version again. For the
+adapter have one slot per release line. If a slot is built twice, the newest build counts. So a
+failed validation is fixed like this: fix the repository, run its release workflow again with the
+same `train`, then run `release-train.yaml` again. The fix may be a new patch version or the same version again. For the
 same version the workflow moves the tag and reuses the release branch and its pull request.
 Nothing is on Maven Central before the upload, so moving the tag is safe.
 
