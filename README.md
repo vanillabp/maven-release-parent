@@ -83,8 +83,8 @@ release-parent 2.0.0. A repository which still names 1.3.0 stops its train relea
 build. The workflows read the other repositories with the organization secret
 `VANILLABP_USER_TOKEN`, which needs `actions:read` there.
 
-Each repository has one slot per train. The Business Cockpit Camunda 8 adapter has one slot per
-release line. If a slot is built twice, the newest build counts. So a failed validation is fixed
+Each repository has one slot per train. The Camunda 8 adapter and the Business Cockpit Camunda 8
+adapter have one slot per release line. If a slot is built twice, the newest build counts. So a failed validation is fixed
 like this: fix the repository, run its release workflow again with the same `train`, then run
 `release-train.yaml` again. The fix may be a new patch version or the same version again. For the
 same version the workflow moves the tag and reuses the release branch and its pull request.
@@ -96,10 +96,11 @@ The order for 2.0:
    `main` first, and its pull request needs that version on Maven Central to build.
 2. Train one: `spi-for-java`, `adapter-platform-integration`, `business-cockpit`. Then
    `release-train.yaml`.
-3. Outside the trains: the Camunda 7 and Camunda 8 adapters in the Camunda Community Hub, which
-   publish under `org.camunda.community`. They need train one on Maven Central.
-4. Train two, in this order: `cibseven-adapter`, `operaton-adapter`,
-   `hazelcast-shared-election-cache`, `businesscockpit-camunda7-adapter`,
+3. Outside the trains: the Camunda 7 adapter in the Camunda Community Hub, which publishes under
+   `org.camunda.community`. It needs train one on Maven Central.
+4. Train two, in this order: `camunda8-adapter` (one run releases all three lines),
+   `cibseven-adapter`, `operaton-adapter`, `hazelcast-shared-election-cache`,
+   `businesscockpit-camunda7-adapter`,
    `businesscockpit-camunda8-adapter` (one run releases all three lines),
    `businesscockpit-cibseven-adapter`, `businesscockpit-operaton-adapter`. Then
    `release-train.yaml`.
@@ -108,6 +109,10 @@ Train two comes after the Camunda Community Hub because it needs the Camunda 7 a
 Central. The migration tests of `cibseven-adapter` and `operaton-adapter` run it next to their own
 engine, and the tests of `hazelcast-shared-election-cache` boot with it. The cockpit adapters of CIB
 seven and Operaton build on the engine adapters of the same train, so those two come first.
+
+The Camunda 8 adapter publishes as `io.vanillabp` since version 2, so it rides in train two. It
+comes before `businesscockpit-camunda8-adapter`, which builds each of its lines against the line of
+the Camunda 8 adapter with the same name and reads it from the bundle of the same train.
 
 `process-engine-api-adapter` and `businesscockpit-process-engine-api-adapter` are not part of 2.0.
 
