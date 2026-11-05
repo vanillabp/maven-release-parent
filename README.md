@@ -96,19 +96,18 @@ The order for 2.0:
    `main` first, and its pull request needs that version on Maven Central to build.
 2. Train one: `spi-for-java`, `adapter-platform-integration`, `business-cockpit`. Then
    `release-train.yaml`.
-3. Outside the trains: the Camunda 7 adapter in the Camunda Community Hub, which publishes under
-   `org.camunda.community`. It needs train one on Maven Central.
-4. Train two, in this order: `camunda8-adapter` (one run releases all three lines),
-   `cibseven-adapter`, `operaton-adapter`, `hazelcast-shared-election-cache`,
-   `businesscockpit-camunda7-adapter`,
+3. Train two, in this order: `camunda8-adapter` (one run releases all three lines),
+   `camunda7-adapter`, `cibseven-adapter`, `operaton-adapter`,
+   `hazelcast-shared-election-cache`, `businesscockpit-camunda7-adapter`,
    `businesscockpit-camunda8-adapter` (one run releases all three lines),
    `businesscockpit-cibseven-adapter`, `businesscockpit-operaton-adapter`. Then
    `release-train.yaml`.
 
-Train two comes after the Camunda Community Hub because it needs the Camunda 7 adapter on Maven
-Central. The migration tests of `cibseven-adapter` and `operaton-adapter` run it next to their own
-engine, and the tests of `hazelcast-shared-election-cache` boot with it. The cockpit adapters of CIB
-seven and Operaton build on the engine adapters of the same train, so those two come first.
+The Camunda 7 adapter publishes as `io.vanillabp` since version 2, so it rides in train two and
+comes first there. The migration tests of `cibseven-adapter` and `operaton-adapter` run it next to
+their own engine, and the tests of `hazelcast-shared-election-cache` boot with it. They read it from
+the bundle of the same train. The cockpit adapters of CIB seven and Operaton build on the engine
+adapters of the same train, so those two come first.
 
 The Camunda 8 adapter publishes as `io.vanillabp` since version 2, so it rides in train two. It
 comes before `businesscockpit-camunda8-adapter`, which builds each of its lines against the line of
