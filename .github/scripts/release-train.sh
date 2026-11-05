@@ -18,16 +18,17 @@
 #       a file which two bundles both contain, prints a table and checks the limits.
 #
 # A slot is one release line of one repository. Its artifact is named
-# release-train-<train>-<repository>-<line>. The line is 'main', except in the Business
-# Cockpit Camunda 8 adapter, which has one line per Camunda version. A slot can be built
-# more than once, for example after a fix. The newest build of a slot wins.
+# release-train-<train>-<repository>-<line>. The line is 'main', except in the Camunda 8
+# adapter and the Business Cockpit Camunda 8 adapter, which have one line per Camunda
+# version. A slot can be built more than once, for example after a fix. The newest build of
+# a slot wins.
 #
 # Needs GH_TOKEN with 'actions:read' in every repository below.
 set -euo pipefail
 
 ORGANIZATION=vanillabp
 REPOSITORIES="maven-release-parent spi-for-java adapter-platform-integration
-  camunda7-adapter
+  camunda8-adapter camunda7-adapter
   cibseven-adapter operaton-adapter
   hazelcast-shared-election-cache business-cockpit businesscockpit-camunda7-adapter
   businesscockpit-camunda8-adapter businesscockpit-cibseven-adapter
