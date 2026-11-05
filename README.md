@@ -98,9 +98,9 @@ The order for 2.0:
    `release-train.yaml`.
 3. Train two, in this order: `camunda8-adapter` (one run releases all three lines),
    `camunda7-adapter`, `cibseven-adapter`, `operaton-adapter`,
-   `hazelcast-shared-election-cache`, `businesscockpit-camunda7-adapter`,
-   `businesscockpit-camunda8-adapter` (one run releases all three lines),
-   `businesscockpit-cibseven-adapter`, `businesscockpit-operaton-adapter`. Then
+   `hazelcast-shared-election-cache`, `business-cockpit-camunda7-adapter`,
+   `business-cockpit-camunda8-adapter` (one run releases all three lines),
+   `business-cockpit-cibseven-adapter`, `business-cockpit-operaton-adapter`. Then
    `release-train.yaml`.
 
 The Camunda 7 adapter publishes as `io.vanillabp` since version 2, so it rides in train two and
@@ -110,10 +110,10 @@ the bundle of the same train. The cockpit adapters of CIB seven and Operaton bui
 adapters of the same train, so those two come first.
 
 The Camunda 8 adapter publishes as `io.vanillabp` since version 2, so it rides in train two. It
-comes before `businesscockpit-camunda8-adapter`, which builds each of its lines against the line of
+comes before `business-cockpit-camunda8-adapter`, which builds each of its lines against the line of
 the Camunda 8 adapter with the same name and reads it from the bundle of the same train.
 
-`process-engine-api-adapter` and `businesscockpit-process-engine-api-adapter` are not part of 2.0.
+`process-engine-api-adapter` and `business-cockpit-process-engine-api-adapter` are not part of 2.0.
 
 ## Noteworthy & Contributors
 
