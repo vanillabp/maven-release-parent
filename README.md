@@ -137,6 +137,14 @@ the artifact and the repository which builds it, read from the snapshot on Maven
 that repository first, in the same train or alone, then run the release again with the same
 version.
 
+After that, `release-versions.sh no-snapshots` stops the release if any `pom.xml` still names a
+SNAPSHOT. `raise` changes `io.vanillabp*` only, so this is the step which finds a SNAPSHOT of
+anybody else, for example `com.phactum.mongodb:mongodb-changesets` in the Business Cockpit. Release
+that library first and name its released version on `main`. A property which holds the version of
+the repository itself, like `revision`, is left out, because the build overrides it, and so is a
+property nobody reads. `release-train.yaml` runs the same check on the POMs of the merged bundle
+before it uploads.
+
 Before that, `release-versions.sh unpublished` asks Maven Central for the version which is about
 to be released. If it is there, the release stops: a version on Maven Central never changes. If it
 is not there, nobody can use the tag yet, so every release, with or without a train, moves an

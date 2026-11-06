@@ -44,6 +44,8 @@ jobs:
           GH_TOKEN: "${{ secrets.VANILLABP_USER_TOKEN }}"
         run: |
           bash .github/scripts/release-train.sh collect "$TRAIN" "$RUNNER_TEMP/train" "$MAX_FILES" "$MAX_MB"
+          # the last look before the upload, at the POMs which would be published
+          bash .github/scripts/release-versions.sh no-snapshots "$RUNNER_TEMP/train"
           cd "$RUNNER_TEMP/train"
           zip -q -r "$RUNNER_TEMP/release-train.zip" .
           ls -l "$RUNNER_TEMP/release-train.zip"
