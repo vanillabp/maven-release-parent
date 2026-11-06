@@ -61,20 +61,10 @@ jobs:
           mvn --batch-mode versions:set -DnewVersion=${{ github.event.inputs.release_version }}
           find . -name pom.xml.versionsBackup -delete
 
-      - name: Check for SNAPSHOT dependencies
-        run: |
-          # Exclude own version entry (parent POM starts as SNAPSHOT itself)
-          SNAPSHOT_POMS=$(grep -R "<.*>.*SNAPSHOT<\/.*>" . --include=pom.xml \
-            | grep -v "<version>${{ github.event.inputs.release_version }}" || true)
-
-          if [ -n "$SNAPSHOT_POMS" ]; then
-            echo "::error::Found SNAPSHOT dependencies in the project:"
-            echo "$SNAPSHOT_POMS"
-            # a released pom which points at a snapshot cannot be resolved later, so the
-            # release stops here instead of printing a warning nobody reads
-            exit 1
-          fi
-          echo "No SNAPSHOT dependencies found."
+      # a released pom which points at a snapshot cannot be resolved later, so the release
+      # stops here instead of printing a warning nobody reads
+      - name: No SNAPSHOT is left
+        run: bash .github/scripts/release-versions.sh no-snapshots
 
       # A release train builds the bundle of each release and keeps it as an Actions artifact.
       # release-train.yaml in maven-release-parent uploads the bundles of all repositories of

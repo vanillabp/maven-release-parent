@@ -23,6 +23,14 @@
 #       one of the given versions of an artifact this repository builds. Below that line a
 #       release may move its tag and replace its release branch, because nothing of that
 #       version can be used by anybody yet.
+#   release-versions.sh no-snapshots [<directory>]
+#       In a release build, after 'raise', before the build. Stops if a pom.xml of the
+#       repository still names a SNAPSHOT. 'raise' changes those of io.vanillabp* only, so
+#       this is the step which finds a SNAPSHOT of anybody else, for example of a library
+#       which is not on Maven Central yet. A property which holds the version of the
+#       repository itself, like 'revision', is left out, because the build overrides it.
+#       With a directory it reads every *.pom below it instead, which is what
+#       release-train.yaml does with the merged bundle before the upload.
 #
 # The bundles of a train are the ones 'release-train.sh prepare' downloaded to
 # $RUNNER_TEMP/release-train-work. They are read there and not in ~/.m2/repository, because
@@ -39,7 +47,8 @@ shift || true
 case "$command" in
   raise) [ $# -le 1 ] || { echo "::error::usage: release-versions.sh raise [<train>]" >&2; exit 1; } ;;
   unpublished) [ $# -ge 1 ] || { echo "::error::usage: release-versions.sh unpublished <version>..." >&2; exit 1; } ;;
-  *) echo "::error::usage: release-versions.sh raise|unpublished ..." >&2; exit 1 ;;
+  no-snapshots) [ $# -le 1 ] || { echo "::error::usage: release-versions.sh no-snapshots [<directory>]" >&2; exit 1; } ;;
+  *) echo "::error::usage: release-versions.sh raise|unpublished|no-snapshots ..." >&2; exit 1 ;;
 esac
 
 exec python3 -I - "$command" "$@" <<'PYTHON'
@@ -363,8 +372,85 @@ def unpublished(versions):
     print(f"Maven Central has no artifact of this repository in version {', '.join(versions)}.")
 
 
+def published_poms(directory):
+    found = []
+    for folder, _, files in os.walk(directory):
+        found += [os.path.join(folder, name) for name in files if name.endswith(".pom")]
+    return sorted(found)
+
+
+def properties_of_own_version(pom):
+    """Names of the properties which decide the version of this POM, as ${revision} does."""
+    names = set()
+    for child in pom.root:
+        if local(child.tag) == "version":
+            names.update(PROPERTY_ONLY.findall(text(child)))
+        elif local(child.tag) == "parent":
+            for inner in child:
+                if local(inner.tag) == "version":
+                    names.update(PROPERTY_ONLY.findall(text(inner)))
+    return names
+
+
+def leaves(element):
+    """(leaf element, name of its parent) of everything below the element."""
+    for child in element:
+        if not isinstance(child.tag, str):
+            continue
+        if len(child):
+            yield from leaves(child)
+        else:
+            yield child, local(element.tag)
+
+
+def no_snapshots(directory):
+    poms = [Pom(p) for p in (published_poms(directory) if directory else pom_files())]
+    read_properties = set()
+    own_version = set()
+    for pom in poms:
+        own_version |= properties_of_own_version(pom)
+        for leaf, _ in leaves(pom.root):
+            read_properties.update(PROPERTY_ONLY.findall(text(leaf)))
+    users = {}  # property -> artifacts whose version it decides
+    for pom in poms:
+        for group, artifact, version in pom.references():
+            for name in PROPERTY_ONLY.findall(version):
+                users.setdefault(name, set()).add(f"{group}:{artifact}")
+    found = []
+    for pom in poms:
+        for leaf, parent in leaves(pom.root):
+            value = text(leaf)
+            if not value.endswith(SUFFIX):
+                continue
+            name = local(leaf.tag)
+            if parent == "properties":
+                # nothing can depend on a property nobody reads
+                if name not in read_properties:
+                    continue
+                # a build sets the version of the repository from outside. In a published
+                # POM that has already happened, so there it would be a defect.
+                if not directory and name in own_version:
+                    continue
+                used_by = ", ".join(sorted(users.get(name, []))) or "nothing which names a version"
+                found.append(f"{pom.path}: property {name} = {value}, used by {used_by}")
+            else:
+                found.append(f"{pom.path}: <{name}> = {value}")
+    if found:
+        print(f"::error::{len(found)} SNAPSHOT versions are left, and a release must not depend on "
+              "something which can still change:", file=sys.stderr)
+        for line in found:
+            print(f"  {line}", file=sys.stderr)
+        fail("Release what these versions name, wait until Maven Central has it, and name the released "
+             "version on main. Versions of io.vanillabp* are raised by 'raise' and do not end up here "
+             "unless the build of this repository left one behind. " +
+             ("Nothing was uploaded." if directory else "Nothing was tagged or pushed."))
+    print(f"No SNAPSHOT is left in the {len(poms)} POMs of this release.")
+
+
 if sys.argv[1] == "raise":
     raise_versions(sys.argv[2] if len(sys.argv) > 2 else "")
+elif sys.argv[1] == "no-snapshots":
+    no_snapshots(sys.argv[2] if len(sys.argv) > 2 else None)
 else:
     unpublished(sys.argv[2:])
 PYTHON
