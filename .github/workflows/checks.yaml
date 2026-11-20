@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
         with:
-          java-version: 25.0.5+8
+          java-version: 27.0.1+100000004
           distribution: temurin
           cache: maven
       # -N everywhere: there are no modules. The effective POM is written next to the run
