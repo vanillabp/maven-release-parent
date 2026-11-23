@@ -63,7 +63,7 @@ None of the repositories publishes on a schedule today. That was decided on purp
 
 Sonatype limits what the `io.vanillabp` namespace may publish: 2500 files, 100 MB and 9
 deployments a month. Every release of a repository is one deployment, and an update of all
-repositories is 13 of them. A release train uploads the releases of several repositories as one
+repositories is 14 of them. A release train uploads the releases of several repositories as one
 deployment.
 
 First run the release workflow of each repository with the input `train`, for example `2.0`.
@@ -98,16 +98,18 @@ The order for 2.0:
    `release-train.yaml`.
 3. Train two, in this order: `camunda8-adapter` (one run releases all three lines),
    `camunda7-adapter`, `cibseven-adapter`, `operaton-adapter`,
-   `hazelcast-shared-election-cache`, `business-cockpit-camunda7-adapter`,
-   `business-cockpit-camunda8-adapter` (one run releases all three lines),
-   `business-cockpit-cibseven-adapter`, `business-cockpit-operaton-adapter`. Then
+   `hazelcast-shared-election-cache`, `gruelbox-phase-two-outbox`,
+   `business-cockpit-camunda7-adapter`, `business-cockpit-camunda8-adapter` (one run releases all
+   three lines), `business-cockpit-cibseven-adapter`, `business-cockpit-operaton-adapter`. Then
    `release-train.yaml`.
 
 The Camunda 7 adapter publishes as `io.vanillabp` since version 2, so it rides in train two and
 comes first there. The migration tests of `cibseven-adapter` and `operaton-adapter` run it next to
 their own engine, and the tests of `hazelcast-shared-election-cache` boot with it. They read it from
-the bundle of the same train. The cockpit adapters of CIB seven and Operaton build on the engine
-adapters of the same train, so those two come first.
+the bundle of the same train. `gruelbox-phase-two-outbox` needs only the platform, so it could ride
+in train one as well. It rides in train two next to `hazelcast-shared-election-cache`, which is built
+the same way. The cockpit adapters of CIB seven and Operaton build on the engine adapters of the
+same train, so those two come first.
 
 The Camunda 8 adapter publishes as `io.vanillabp` since version 2, so it rides in train two. It
 comes before `business-cockpit-camunda8-adapter`, which builds each of its lines against the line of
